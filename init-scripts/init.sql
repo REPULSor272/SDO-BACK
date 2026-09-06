@@ -1,12 +1,12 @@
-DROP TABLE IF EXISTS "TestCase" CASCADE;
-DROP TABLE IF EXISTS "Solution" CASCADE;
-DROP TABLE IF EXISTS "Task" CASCADE;
-DROP TABLE IF EXISTS "Faculty" CASCADE;
-DROP TABLE IF EXISTS "Group" CASCADE;
-DROP TABLE IF EXISTS "User" CASCADE;
-DROP TABLE IF EXISTS "Subject" CASCADE;
-DROP TABLE IF EXISTS "TeacherHasGroups" CASCADE;
-DROP TABLE IF EXISTS "Group_Subject" CASCADE;
+DROP TABLE IF EXISTS "Solution";
+DROP TABLE IF EXISTS "TestCase";
+DROP TABLE IF EXISTS "Task";
+DROP TABLE IF EXISTS "Group_Subject";
+DROP TABLE IF EXISTS "TeacherHasGroups";
+DROP TABLE IF EXISTS "User";
+DROP TABLE IF EXISTS "Group";
+DROP TABLE IF EXISTS "Faculty";
+DROP TABLE IF EXISTS "Subject";
 
 CREATE TABLE "Faculty"
 (
@@ -103,9 +103,9 @@ VALUES ('211-365', 1),
 -- Добавление пользователей
 INSERT INTO "User" (username, password, "roleType", "studyGroup", form_education, first_name, last_name,
                     middle_name)
-VALUES ('teacher', '$2b$12$Zjte0t1hy0QnGzpmnTwJde8XYqhiLo/cv6fivmzkjMemePpfgCVb6', 'teacher', 5, '', 'D~D?D?D?',
+VALUES ('teacher', '$2b$12$Zjte0t1hy0QnGzpmnTwJde8XYqhiLo/cv6fivmzkjMemePpfgCVb6', 'teacher', 5, '', 'Денис',
         'Калмыков', 'Денисович'),
-       ('student', '$2b$12$5ImiBdOUuTQUa.vd2ny77.C/0z680mp4NgYTNBz2FbifEJJjQGrii', 'student', 1, 'DYD?D??,D?D???',
+       ('student', '$2b$12$5ImiBdOUuTQUa.vd2ny77.C/0z680mp4NgYTNBz2FbifEJJjQGrii', 'student', 1, 'Очная',
         'Василий', 'Шубенок', 'Валерьевич');
 
 INSERT INTO "TeacherHasGroups" (teacher_id, group_id)
