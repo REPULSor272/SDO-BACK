@@ -1,0 +1,50 @@
+version: "3.8"
+
+services:
+  app:
+    build:
+      context: ./Python-Monolith/
+      dockerfile: Dockerfile
+    container_name: app_container
+    depends_on:
+      - db
+    ports:
+        - "8000:8000"
+    env_file:
+      - .env
+    networks:
+      - app-network
+
+  db:
+    container_name: db_postgres_sdo
+    image: postgres:15
+    environment:
+      POSTGRES_USER: root
+      POSTGRES_PASSWORD: root
+      POSTGRES_DB: postgres
+    ports:
+      - "5050:5432"
+    volumes:
+      - ./init-scripts/init.sql:/docker-entrypoint-initdb.d/init.sql
+    networks:
+      - app-network
+
+  csharp-app:
+    build:
+      context: ./CDiazCodeLab
+      dockerfile: Dockerfile
+    container_name: csharp_app_container
+    depends_on:
+      - app
+      - db
+    ports:
+      - "5242:5242"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ConnectionStrings__DefaultConnection=Host=db;Port=5432;Database=postgres;Username=root;Password=root
+    networks:
+      - app-network
+
+networks:
+  app-network:
+    driver: bridge
