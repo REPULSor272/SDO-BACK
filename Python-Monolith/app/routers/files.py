@@ -105,6 +105,7 @@ async def test_solution(task_id: int, authorization: str = Header(...)):
     # Выполнение тестирования
     res_check = await check_file(
         task_id,
+        subject_id,
         task_data['teacher_formula'],
         task_data['input_variables'],
         latest_solution.code,
