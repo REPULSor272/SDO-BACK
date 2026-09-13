@@ -114,7 +114,7 @@ async def test_solution(task_id: int, authorization: str = Header(...)):
 
     response = ResponseTest(
         status=res_check.execution_status,
-        formulas_output=res_check.formulas_output,
+        # formulas_output=res_check.formulas_output,
         code_output=res_check.code_output,
         execution_time=res_check.execution_time,
         code_length=res_check.code_length,
