@@ -3,7 +3,6 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.config.settings import get_settings
-from app.middleware.auth import auth_middleware
 from app.routers import router as app_router
 from app.middleware.auth import AuthMiddleware
 
