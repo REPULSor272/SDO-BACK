@@ -8,8 +8,8 @@ from .other import router as other_router
 
 router = APIRouter()
 router.include_router(auth_router)
-router.include_router(files_router)
-router.include_router(users_router)
-router.include_router(subjects_router)
+router.include_router(files_router, prefix="/api")
+router.include_router(users_router, prefix="/api")
+router.include_router(subjects_router, prefix="/api")
 router.include_router(teachers_router)
 router.include_router(other_router)
