@@ -105,6 +105,7 @@ def create_laboratory(task: TaskWithTestCasesSchema):
                 name=task.name,
                 description=task.description,
                 Subject_id=task.subject_id,
+                Group_id=task.group_id,
                 teacher_formula=task.teacher_formula,
                 input_variables=task.input_variables,
                 status='unpublished'
@@ -147,7 +148,8 @@ def get_laboratories():
                     "id": lab.id,
                     "name": lab.name,
                     "subject": lab.subject.name if lab.subject else "Не указано",
-                    "status": lab.status
+                    "status": lab.status,
+                    "group_id": lab.Group_id
                 }
                 for lab in labs
             ]
@@ -170,7 +172,8 @@ def get_laboratoy_with_status(target_status: str):
                     "id": lab.id,
                     "name": lab.name,
                     "subject": lab.subject.name if lab.subject else "Не указано",
-                    "status": lab.status
+                    "status": lab.status,
+                    "group_id": lab.Group_id
                 }
                 for lab in labs
             ]
@@ -282,6 +285,7 @@ def get_lab_details(lab_id: int) -> dict | None:
                 "teacher_formula": lab.teacher_formula,
                 "input_variables": lab.input_variables,
                 "subject_id": lab.Subject_id,
+                "group_id": lab.Group_id,
                 "test_cases": []
             }
 
@@ -321,6 +325,7 @@ def edit_lab(task_id: int, lab: UpdateLabRequest):
             lab_to_update.teacher_formula = lab.task.teacher_formula
             lab_to_update.input_variables = lab.task.input_variables
             lab_to_update.Subject_id = lab.task.subject_id
+            lab_to_update.Group_id = lab.task.group_id
 
             # Удаляем старые тест-кейсы
             session.query(TestCase).filter_by(Task_id=task_id).delete()

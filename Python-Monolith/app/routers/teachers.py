@@ -315,6 +315,7 @@ async def get_unpublished_task_details(lab_id: int):
         teacher_formula=labs.get("teacher_formula"),
         input_variables=labs.get("input_variables"),
         subject_id=labs.get("subject_id"),
+        group_id=labs.get("group_id"),
         test_cases=[{"id": case.get("id"), "inp": case["input"], "out": case["output"]} for case in labs.get("test_cases", [])]
 ).model_dump()
 

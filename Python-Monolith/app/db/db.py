@@ -117,6 +117,7 @@ class Task(Base):
     input_variables = Column(String, nullable=True)
     status = Column(String, nullable=False)
     Subject_id = Column(Integer, ForeignKey('Subject.id', ondelete='CASCADE'), nullable=False)
+    Group_id = Column(Integer, ForeignKey('Group.id', ondelete='SET NULL'), nullable=True)
     subject = relationship('Subject', back_populates='tasks')
     solution = relationship('Solution', back_populates='task', uselist=False)
     testCases = relationship('TestCase', back_populates='task')

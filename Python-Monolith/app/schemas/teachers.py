@@ -51,6 +51,7 @@ class TaskBaseSchema(BaseModel):
     teacher_formula: Optional[str] = None
     input_variables: Optional[str] = None
     subject_id: int
+    group_id: Optional[int] = None
 
     class Config:
         from_attributes = True
@@ -72,6 +73,7 @@ class LabResponse(BaseModel):
     name: str
     subject_name: str
     status: str
+    group_id: Optional[int] = None
 
 class UpdateLabRequest(BaseModel):
     task: TaskWithTestCasesSchema
@@ -86,4 +88,5 @@ class DetailLab(BaseModel):
     teacher_formula: Optional[str] = None
     input_variables: Optional[str] = None
     subject_id: int
+    group_id: Optional[int] = None
     test_cases: List[TestCaseSchema]

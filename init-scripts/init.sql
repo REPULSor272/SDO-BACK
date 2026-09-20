@@ -64,7 +64,8 @@ CREATE TABLE "Task"
     teacher_formula VARCHAR,
     input_variables VARCHAR,
     status          VARCHAR CHECK ( status IN ('published', 'unpublished') ),
-    "Subject_id"    INTEGER      NOT NULL REFERENCES "Subject" (id) ON DELETE CASCADE
+    "Subject_id"    INTEGER      NOT NULL REFERENCES "Subject" (id) ON DELETE CASCADE,
+    "Group_id"      INTEGER      REFERENCES "Group" (id) ON DELETE SET NULL
 );
 
 CREATE TABLE "Solution"
@@ -139,25 +140,25 @@ VALUES (1, 1),
        (4, 4);
 
 -- Добавление заданий
-INSERT INTO "Task" (name, "Subject_id", description, teacher_formula, input_variables, status)
+INSERT INTO "Task" (name, "Subject_id", description, teacher_formula, input_variables, status,"Group_id")
 VALUES ('Задание 1. Python - числовые типы', 1,
         'Задача на числовые типы\nПример входных данных: 1 2 3\nПример выходных данных: 0 2',
-        'b1=a1+a2-a3\nb2=b1+a2', 'a1\na2\na3', 'published'),
-       ('Задание 1. С++ - числовые типы', 2, 'Задача на числовые типы', 'c - d', 'a3, a4', 'published'),
-       ('Задание 2. Python - строки', 1, 'Задача на строки', 'a + b', 'a1, a2', 'published'),
-       ('Задание 2. С++ - строки', 2, 'Задача на строки', 'c - d', 'a3, a4', 'published'),
-       ('Задание 3. Python - списки', 1, 'Задача на списки', 'a + b', 'a1, a2', 'unpublished'),
-       ('Задание 3. С++ - списки', 2, 'Задача на списки', 'c - d', 'a3, a4', 'published'),
-       ('Задание 1. Java - числовые типы', 3, 'Задача на числовые типы', 'a + b', 'a1, a2', 'published'),
-       ('Задание 2. Java - строки', 3, 'Задача на строки', 'a + b', 'a1, a2', 'unpublished'),
-       ('Задание 3. Java - списки', 3, 'Задача на списки', 'a + b', 'a1, a2', 'unpublished'),
-       ('Задание 4. Java - массивы', 3, 'Задача на массивы', 'a + b', 'a1, a2', 'unpublished'),
-       ('Задание 5. Java - классы', 3, 'Задача на классы', 'a + b', 'a1, a2', 'published'),
-       ('Задание 1. C# - числовые типы', 4, 'Задача на числовые типы', 'a + b', 'a1, a2', 'published'),
-       ('Задание 2. C# - строки', 4, 'Задача на строки', 'a + b', 'a1, a2', 'unpublished'),
-       ('Задание 3. C# - списки', 4, 'Задача на списки', 'a + b', 'a1, a2', 'published'),
-       ('Задание 4. C# - массивы', 4, 'Задача на массивы', 'a + b', 'a1, a2', 'unpublished'),
-       ('Задание 5. C# - классы', 4, 'Задача на классы', 'a + b', 'a1, a2', 'published');
+        'b1=a1+a2-a3\nb2=b1+a2', 'a1\na2\na3', 'published', 1),
+       ('Задание 1. С++ - числовые типы', 2, 'Задача на числовые типы', 'c - d', 'a3, a4', 'published',1),
+       ('Задание 2. Python - строки', 1, 'Задача на строки', 'a + b', 'a1, a2', 'published',1),
+       ('Задание 2. С++ - строки', 2, 'Задача на строки', 'c - d', 'a3, a4', 'published',1),
+       ('Задание 3. Python - списки', 1, 'Задача на списки', 'a + b', 'a1, a2', 'unpublished',1),
+       ('Задание 3. С++ - списки', 2, 'Задача на списки', 'c - d', 'a3, a4', 'published',1),
+       ('Задание 1. Java - числовые типы', 3, 'Задача на числовые типы', 'a + b', 'a1, a2', 'published',1),
+       ('Задание 2. Java - строки', 3, 'Задача на строки', 'a + b', 'a1, a2', 'unpublished',1),
+       ('Задание 3. Java - списки', 3, 'Задача на списки', 'a + b', 'a1, a2', 'unpublished',1),
+       ('Задание 4. Java - массивы', 3, 'Задача на массивы', 'a + b', 'a1, a2', 'unpublished',1),
+       ('Задание 5. Java - классы', 3, 'Задача на классы', 'a + b', 'a1, a2', 'published',1),
+       ('Задание 1. C# - числовые типы', 4, 'Задача на числовые типы', 'a + b', 'a1, a2', 'published',1),
+       ('Задание 2. C# - строки', 4, 'Задача на строки', 'a + b', 'a1, a2', 'unpublished',1),
+       ('Задание 3. C# - списки', 4, 'Задача на списки', 'a + b', 'a1, a2', 'published',1),
+       ('Задание 4. C# - массивы', 4, 'Задача на массивы', 'a + b', 'a1, a2', 'unpublished',1),
+       ('Задание 5. C# - классы', 4, 'Задача на классы', 'a + b', 'a1, a2', 'published',1);
 
 -- Добавление тестовых случаев
 INSERT INTO "TestCase" (inp, out, "Task_id")
