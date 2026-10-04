@@ -68,18 +68,8 @@ def get_users_by_group(group_id) -> list[UserInfo] | str:
         return users_info
 
 
-def get_student_tasks_with_status(user_id: int) -> list[tuple[int, str, bool]]:
-    """
-    Получает все задания студента по его user_id с информацией о выполнении.
-
-    Args:
-        user_id: ID студента
-
-    Returns:
-        Список кортежей (task_id, task_name, is_completed)
-    """
+def get_student_tasks_with_status(user_id: int) -> list[dict]:
     with Session() as session:
-        # Получаем все subject_id, связанные с пользователем
         user_group = session.query(User).filter_by(id=user_id).first()
         student_subjects = session.query(GroupSubject.subject_id) \
             .filter(GroupSubject.group_id == user_group.group_rel.id) \
@@ -88,20 +78,23 @@ def get_student_tasks_with_status(user_id: int) -> list[tuple[int, str, bool]]:
         if not student_subjects:
             return []
 
-        # Извлекаем только subject_id из результатов запроса
         subject_ids = [subj.subject_id for subj in student_subjects]
 
-        # Получаем все задания, связанные с этими subject_id
         tasks = session.query(Task) \
-            .filter(Task.Subject_id.in_(subject_ids), Task.status=='published') \
+            .filter(Task.Subject_id.in_(subject_ids), Task.status == 'published') \
             .order_by(Task.id) \
             .all()
 
-        # Формируем результат с информацией о выполнении
         result = []
         for task in tasks:
             completed = is_task_completed(session, user_id, task.id)
-            result.append((task.id, task.name, completed))
+            result.append({
+                "id": task.id,
+                "name": task.name,
+                "completed": completed,
+                "subject_id": task.Subject_id,
+                "subject_name": task.subject.name if task.subject else "Не указано",
+            })
 
         return result
 
