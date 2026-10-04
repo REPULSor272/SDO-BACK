@@ -1,3 +1,5 @@
+from typing import Optional
+
 from pydantic import BaseModel
 
 class SolutionInfo(BaseModel):
@@ -19,3 +21,13 @@ class Task(BaseModel):
     name: str
     description: str
     status: str = "Не выполнено"
+
+class StudentTaskResult(BaseModel):
+    user_id: int
+    username: str
+    group: str
+    score: Optional[int] = None
+    isSubmitted: bool
+
+class MarkUpdateSchema(BaseModel):
+    mark: int

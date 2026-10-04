@@ -213,6 +213,27 @@ def get_student_labs(student_id: int, lab_id: int) -> TaskInfo | str:
 
         return response
 
+def get_student_labs_file(student_id: int, task_id: int) -> str | None:
+    with  Session() as session:
+        # Ищем последнее загруженное решение студента по этой лабе
+        latest_solution = (
+            session.query(Solution)
+            .filter(
+                Solution.Task_id == task_id,
+                Solution.User_id == student_id,
+                Solution.is_hidden == False
+            )
+            .order_by(Solution.id.desc())  # Самое свежее
+            .first()
+        )
+
+        if not latest_solution:
+            return None
+
+        return latest_solution.code
+
+
+
 def get_users_by_faculty(faculty_id: int) -> Union[list[UserInfo], str]:
     """
     Получает список студентов, связанных с факультетом через их группы.

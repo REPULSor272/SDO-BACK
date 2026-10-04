@@ -1,14 +1,15 @@
 from fastapi import APIRouter, Depends, HTTPException, Header, Request
 from fastapi.responses import JSONResponse
 from http import HTTPStatus
-from typing import List
+from typing import List, Optional
 
+from app.core.check_auth import check_auth
 from app.core.jwt_handler import decode_access_token
 from app.db.student_methods import get_groups_by_faculty, get_student_labs, get_student_labs_by_subject, \
     get_users_by_faculty, get_users_by_group
 from app.db.teacher_methods import get_teacher_subjects, get_students_data, create_laboratory, get_laboratories, \
-    delete_laboratory, toggle_laboratory_status, get_student_tasks_with_status, get_lab_details, edit_lab, get_laboratoy_with_status
-from app.db.user_methods import get_groups_by_user_id, get_username_by_id, is_user_enrolled_in_subject
+    delete_laboratory, toggle_laboratory_status, get_student_tasks_with_status, get_lab_details, edit_lab, get_laboratoy_with_status, update_latest_solution_mark
+from app.db.user_methods import get_groups_by_user_id, get_task_students_status, get_username_by_id, is_user_enrolled_in_subject
 from app.schemas.teachers import (
     StudentResponse,
     GroupResponse,
@@ -17,6 +18,7 @@ from app.schemas.teachers import (
 )
 from app.schemas.users import FullUserInfo
 from app.utils.utils import response_with_json, response_with_error
+from app.schemas.task import MarkUpdateSchema, StudentTaskResult
 
 router = APIRouter(prefix="/api/teachers")
 
@@ -148,7 +150,7 @@ async def get_faculty_groups(faculty_id: int):
 @router.get("/groups", response_model=list[GroupResponse], summary="Получение групп преподавателя")
 async def get_groups(request: Request):
    
-    user_id = request.state.user_id
+    user_id = getattr(request.state, "user_id", None)
     groups = get_groups_by_user_id(user_id)
 
     resposne = [GroupResponse(
@@ -323,3 +325,57 @@ async def get_unpublished_task_details(lab_id: int):
         status_code=HTTPStatus.OK,
         content=response
     )
+
+
+
+@router.get("/tasks/{task_id}/students", response_model=List[StudentTaskResult], 
+            summary="Получение статуса сдачи задачи по всем студентам")
+async def get_task_students(task_id: int):
+    students_data = get_task_students_status(task_id)
+    
+    if students_data is None:
+        return response_with_error(
+            HTTPStatus.NOT_FOUND,
+            "Лабораторная работа не найдена"
+        )
+
+    return response_with_json(
+        HTTPStatus.OK,
+        students_data
+    )
+
+@router.patch("/task/{task_id}/student/{student_id}/mark", summary="Изменить оценку последнему решению студента")
+async def set_latest_mark(
+    task_id: int,
+    student_id: int,
+    data: MarkUpdateSchema,
+    authorization: Optional[str] = Header(None)
+):
+    if not authorization:
+        return JSONResponse(
+            status_code=HTTPStatus.UNAUTHORIZED,
+            content={"detail": "Authorization header missing"}
+        )
+
+    check_data = check_auth(authorization)
+    if isinstance(check_data, JSONResponse):
+        return check_data
+
+    success = update_latest_solution_mark(
+        student_id=student_id, 
+        task_id=task_id, 
+        new_mark=data.mark
+    )
+    
+    if not success:
+        return JSONResponse(
+            status_code=HTTPStatus.NOT_FOUND,
+            content={"detail": "Solution for this task and student not found"}
+        )
+
+    return {
+        "message": "Mark updated successfully",
+        "task_id": task_id,
+        "student_id": student_id,
+        "new_mark": data.mark
+    }

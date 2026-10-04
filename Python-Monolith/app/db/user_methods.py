@@ -1,6 +1,6 @@
 from sqlite3 import IntegrityError
 from typing import Any, Union
-from app.db.db import Group, GroupSubject, Session, Subject, TeacherHasGroups, User, Task
+from app.db.db import Group, GroupSubject, Session, Solution, Subject, TeacherHasGroups, User, Task
 from app.db.group_methods import get_group_id
 from app.schemas.auth import RegisterRequest
 from app.schemas.subject import SubjectInfo
@@ -311,4 +311,58 @@ def validate_user(username: str, password: str) -> Union[dict, bool]:
         return False
 
 
+def get_task_students_status(task_id: int):
+    session = Session()
+    try:
+        # 1. Получаем задачу
+        task = session.query(Task).filter(Task.id == task_id).first()
+        if not task:
+            return None
 
+        # 2. Находим студентов (если у задачи указан Group_id — берем эту группу, иначе — все группы предмета)
+        query = session.query(User).join(Group, User.studyGroup == Group.id)
+
+        if task.Group_id:
+            students = query.filter(
+                User.studyGroup == task.Group_id,
+                User.roleType == 'student'
+            ).all()
+        else:
+            students = query.join(GroupSubject, Group.id == GroupSubject.group_id).filter(
+                GroupSubject.subject_id == task.Subject_id,
+                User.roleType == 'student'
+            ).all()
+
+        result = []
+
+        # 3. Формируем список студентов и статус их сдачи
+        for student in students:
+            # Находим последнее решение студента по этой задаче
+            solution = (
+                session.query(Solution)
+                .filter(Solution.User_id == student.id, Solution.Task_id == task.id)
+                .order_by(Solution.id.desc())
+                .first()
+            )
+
+            # Формируем ФИО
+            full_name = f"{student.last_name} {student.first_name} {student.middle_name}".strip()
+            
+            # Название группы
+            group_name = student.group_rel.name if student.group_rel else "Без группы"
+
+            # Определяем, сдана ли работа и какая оценка
+            is_submitted = solution is not None
+            score = solution.mark if solution else None
+
+            result.append({
+                "id": student.id,
+                "fullName": full_name,
+                "group": group_name,
+                "score": score,
+                "isSubmitted": is_submitted
+            })
+
+        return result
+    finally:
+        session.close()

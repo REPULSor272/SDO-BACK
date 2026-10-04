@@ -1,6 +1,6 @@
 from typing import Union
 
-from app.db.db import Group, GroupSubject, Session, Subject, TestCase, User
+from app.db.db import Group, GroupSubject, Session, Solution, Subject, TestCase, User
 from app.db.task_methods import is_task_completed
 from app.schemas.subject import SubjectInfo
 from app.db.db import Task
@@ -347,3 +347,23 @@ def edit_lab(task_id: int, lab: UpdateLabRequest):
             session.rollback()
             print(f"Ошибка при обновлении лабораторной работы: {e}")
             return False
+
+def update_latest_solution_mark(student_id: int, task_id: int, new_mark: int) -> bool:
+    with Session() as session:
+        latest_solution = (
+            session.query(Solution)
+            .filter(
+                Solution.Task_id == task_id,  # С заглавной буквы T
+                Solution.User_id == student_id,  # С заглавной буквы U
+                Solution.is_hidden == False
+            )
+            .order_by(Solution.id.desc())
+            .first()
+        )
+        
+        if not latest_solution:
+            return False
+            
+        latest_solution.mark = new_mark
+        session.commit()
+        return True

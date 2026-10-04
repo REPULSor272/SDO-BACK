@@ -1,8 +1,8 @@
 import ast
-from typing import Union
+from typing import Optional, Union
 
 from fastapi import APIRouter, Header, UploadFile, File, Depends
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, Response
 from http import HTTPStatus
 
 from app.core.check_auth import check_auth
@@ -16,6 +16,7 @@ from app.schemas.task import TaskInfo, SolutionInfo
 from app.schemas.test import ResponseTest
 from app.testing_pyfiles.test import check_file
 from app.utils.utils import response_with_json
+from app.db.student_methods import get_student_labs_file
 
 router = APIRouter()
 
@@ -209,3 +210,36 @@ async def delete_solution(solution_id: int, authorization: str = Header(...)):
             status_code=HTTPStatus.NOT_FOUND,
             content={"detail": "Solution not found or access denied"}
         )
+
+@router.get("/task/{task_id}/download/{student_id}", summary="Скачать последнее решение студента")
+async def download_student_file(task_id: int, student_id: int, authorization: Optional[str] = Header(None)):
+
+    if not authorization:
+        return JSONResponse(
+            status_code=HTTPStatus.UNAUTHORIZED,
+            content={"detail": "Authorization header missing"}
+        )
+
+    check_data = check_auth(authorization)
+    if isinstance(check_data, JSONResponse):
+        return check_data
+    
+    # 2. Достаем код через нашу функцию
+    code_text = get_student_labs_file(student_id=student_id, task_id=task_id)
+    
+    if not code_text:
+        return JSONResponse(
+            status_code=HTTPStatus.NOT_FOUND,
+            content={"detail": "Solution not found"}
+        )
+
+    # 3. Отдаем как файл для скачивания
+    filename = f"lab_{task_id}_student_{student_id}.py"
+    
+    return Response(
+        content=code_text,
+        media_type="text/x-python",
+        headers={
+            "Content-Disposition": f'attachment; filename="{filename}"'
+        }
+    )
