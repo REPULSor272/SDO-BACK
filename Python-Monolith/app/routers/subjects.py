@@ -80,7 +80,6 @@ async def get_user_labs(authorization: str = Header(...)) -> JSONResponse:
         return check_data
 
     user_labs = get_student_tasks_with_status(check_data['user_id'])
-
     serialized_labs = [lab for lab in user_labs]
 
     return JSONResponse(

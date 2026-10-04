@@ -287,15 +287,12 @@ async def get_students_info(student_id: int):
     )
 
 # Получение всех лаб студента
-@router.get("/students/{student_id}/labs", response_model=list[LabResponse], summary="Получение всех лаб студента")
+@router.get("/students/{student_id}/labs", summary="Получение всех лаб студента")
 async def get_student_labs(student_id: int):
     user_labs = get_student_tasks_with_status(student_id)
-
-    serialized_labs = [lab for lab in user_labs]
-
     return JSONResponse(
         status_code=HTTPStatus.OK,
-        content=serialized_labs
+        content=user_labs
     )
 
 # Получение деталей лабораторной работы
