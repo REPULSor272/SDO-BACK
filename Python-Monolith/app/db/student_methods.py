@@ -9,42 +9,31 @@ from sqlalchemy import func, case
 
 
 def reg_user_in_subject(user_id, subject_identifier):
-    """
-    Зачисляет пользователя на дисциплину по ID пользователя и ID или имени дисциплины.
-
-    :param user_id: ID пользователя
-    :param subject_identifier: ID или имя дисциплины
-    :raises ValueError: Если пользователь или дисциплина не найдены
-    """
     with Session() as session:
         try:
-            # Проверяем, существует ли пользователь с таким user_id
             user = session.query(User).filter_by(id=user_id).first()
             if not user:
                 raise ValueError(f"User with ID {user_id} not found.")
 
-            # Если передан ID дисциплины
             if isinstance(subject_identifier, int):
                 subject = session.query(Subject).filter_by(id=subject_identifier).first()
-            # Если передано имя дисциплины
             else:
                 subject = session.query(Subject).filter_by(name=subject_identifier).first()
 
             if not subject:
                 raise ValueError(f"Subject with identifier '{subject_identifier}' not found.")
 
-            # Проверяем, не зачислен ли уже пользователь на эту дисциплину
             if subject in user.subjects:
                 raise ValueError(f"User with ID {user_id} is already enrolled in the subject '{subject.name}'.")
 
-            # Добавляем дисциплину в список предметов пользователя
             user.subjects.append(subject)
             session.commit()
 
         except Exception as e:
-            session.rollback()  # Откат транзакции в случае ошибки
+            session.rollback()
             print(f"Error enrolling user {user_id} in subject {subject_identifier}: {e}")
             raise
+
 
 def get_users_by_group(group_id) -> list[UserInfo] | str:
     with Session() as session:
@@ -88,26 +77,35 @@ def get_student_tasks_with_status(user_id: int) -> list[dict]:
         result = []
         for task in tasks:
             completed = is_task_completed(session, user_id, task.id)
+
+            latest_solution = session.query(Solution) \
+                .filter_by(User_id=user_id, Task_id=task.id) \
+                .order_by(Solution.id.desc()) \
+                .first()
+
+            if latest_solution is None:
+                status = "not_started"
+            elif latest_solution.status == "Success":
+                status = "success"
+            elif latest_solution.status == "Failed":
+                status = "failed"
+            else:
+                status = "not_started"
+
             result.append({
                 "id": task.id,
                 "name": task.name,
                 "completed": completed,
+                "status": status,
                 "subject_id": task.Subject_id,
                 "subject_name": task.subject.name if task.subject else "Не указано",
             })
 
         return result
 
-def get_student_labs_by_subject(student_id: int, subject_id: int) -> list[LabStatus]:
-    """
-    Получает список лабораторных работ студента по предмету с их статусами.
 
-    :param student_id: ID студента.
-    :param subject_id: ID предмета.
-    :return: Список объектов LabStatus с информацией о заданиях и их статусах.
-    """
+def get_student_labs_by_subject(student_id: int, subject_id: int) -> list[LabStatus]:
     with Session() as session:
-        # Основной запрос
         labs_status = (
             session.query(
                 Task.id.label("task_id"),
@@ -144,20 +142,11 @@ def get_student_labs_by_subject(student_id: int, subject_id: int) -> list[LabSta
 
 
 def get_student_labs(student_id: int, lab_id: int) -> TaskInfo | str:
-    """
-    Получает детальную информацию о лабораторной работе студента, включая статус и все его решения.
-
-    :param student_id: ID студента.
-    :param lab_id: ID лабораторной работы (Task).
-    :return: Объект LabDetailResponse с информацией о задании и решениях.
-    """
     with Session() as session:
-        # Проверяем существование задания
         task = session.query(Task).filter_by(id=lab_id).first()
         if not task:
             return f"Лабораторная работа с ID {lab_id} не найдена"
 
-        # Получаем статус задания для студента
         status_query = (
             session.query(
                 func.coalesce(
@@ -174,7 +163,6 @@ def get_student_labs(student_id: int, lab_id: int) -> TaskInfo | str:
             .filter(Solution.Task_id == lab_id)
         ).scalar()
 
-        # Получаем все решения студента для этого задания
         solutions = (
             session.query(Solution)
             .filter(Solution.User_id == student_id)
@@ -185,7 +173,7 @@ def get_student_labs(student_id: int, lab_id: int) -> TaskInfo | str:
         if not solutions:
             return f"No solutions found for student with ID {student_id} and task with ID {lab_id}."
         print([(solution.code, solution.status) for solution in solutions])
-        # Формируем список решений
+
         solutions_list = [
             SolutionInfo(
                 code=solution.code,
@@ -194,7 +182,6 @@ def get_student_labs(student_id: int, lab_id: int) -> TaskInfo | str:
             for solution in solutions
         ]
 
-        # Формируем ответ
         response = TaskInfo(
             id=task.id,
             name=task.name,
@@ -206,9 +193,9 @@ def get_student_labs(student_id: int, lab_id: int) -> TaskInfo | str:
 
         return response
 
+
 def get_student_labs_file(student_id: int, task_id: int) -> str | None:
-    with  Session() as session:
-        # Ищем последнее загруженное решение студента по этой лабе
+    with Session() as session:
         latest_solution = (
             session.query(Solution)
             .filter(
@@ -216,7 +203,7 @@ def get_student_labs_file(student_id: int, task_id: int) -> str | None:
                 Solution.User_id == student_id,
                 Solution.is_hidden == False
             )
-            .order_by(Solution.id.desc())  # Самое свежее
+            .order_by(Solution.id.desc())
             .first()
         )
 
@@ -226,14 +213,7 @@ def get_student_labs_file(student_id: int, task_id: int) -> str | None:
         return latest_solution.code
 
 
-
 def get_users_by_faculty(faculty_id: int) -> Union[list[UserInfo], str]:
-    """
-    Получает список студентов, связанных с факультетом через их группы.
-
-    :param faculty_id: ID факультета.
-    :return: Список объектов UserInfo или сообщение об ошибке, если студентов нет.
-    """
     with Session() as session:
         groups = get_groups_by_faculty(faculty_id)
 
