@@ -1,4 +1,5 @@
 import ast
+from http.client import HTTPException
 from typing import Optional, Union
 
 from fastapi import APIRouter, Header, UploadFile, File, Depends
@@ -195,21 +196,25 @@ async def hide_solution(solution_id: int, authorization: str = Header(...)):
 @router.delete("/task/solution/{solution_id}", summary="Удаление конкретного решения")
 async def delete_solution(solution_id: int, authorization: str = Header(...)):
     auth_data = check_auth(authorization)
+
     if isinstance(auth_data, JSONResponse):
         return auth_data
-    user_role = auth_data.get('roleType')
-    if user_role != "teacher":
+
+    user_role = auth_data.get("roleType")
+    user_id = auth_data.get("user_id")  # Уточнить название поля
+
+    if user_role not in ("teacher", "student"):
         return JSONResponse(
             status_code=HTTPStatus.FORBIDDEN,
-            content={"detail": "Only teachers can delete solutions"}
+            content={"detail": "Access denied"}
         )
-    if delete_solution_bd(solution_id):
-        return {"message": "Solution deleted successfully"}
-    else:
-        return JSONResponse(
-            status_code=HTTPStatus.NOT_FOUND,
-            content={"detail": "Solution not found or access denied"}
-        )
+
+    if delete_solution_bd(solution_id, user_id, user_role):
+        return {"message": "Решение удалено"}
+
+    return JSONResponse(
+        status_code=HTTPStatus.NOT_FOUND,
+        content={"detail": "Solution not found or access denied"})
 
 @router.get("/task/{task_id}/download/{student_id}", summary="Скачать последнее решение студента")
 async def download_student_file(task_id: int, student_id: int, authorization: Optional[str] = Header(None)):
@@ -243,3 +248,4 @@ async def download_student_file(task_id: int, student_id: int, authorization: Op
             "Content-Disposition": f'attachment; filename="{filename}"'
         }
     )
+

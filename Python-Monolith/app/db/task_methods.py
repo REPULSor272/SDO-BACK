@@ -177,21 +177,25 @@ def update_solution_hidden(user_id: int, solution_id: int):
             return False
 
 
-def delete_solution_bd(solution_id: int):
-    """Удаляет solution пользователя. Возвращает True, если успешно."""
+def delete_solution_bd(solution_id: int, user_id: int, user_role: str):
     with Session() as session:
         try:
             solution = session.query(Solution).filter_by(id=solution_id).first()
+
             if not solution:
                 return False
+
+            if user_role == "student" and solution.User_id != user_id:
+                return False
+
             session.delete(solution)
             session.commit()
             return True
+
         except Exception as e:
             session.rollback()
             print(f"[delete_solution] Error: {e}")
             return False
-
 
 def get_solutions_by_user(user_id):
     """
@@ -280,3 +284,14 @@ def is_task_completed(session: Session, user_id: int, task_id: int) -> bool:
         .first()
 
     return solution is not None
+
+def delete_solution(solution_id: int) -> bool:
+    with Session() as session:
+        solution = session.get(Solution, solution_id)
+
+        if solution is None:
+            return False
+
+        session.delete(solution)
+        session.commit()
+        return True
