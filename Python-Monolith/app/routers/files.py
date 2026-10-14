@@ -116,8 +116,10 @@ async def test_solution(task_id: int, authorization: str = Header(...)):
 
     response = ResponseTest(
         status=res_check.execution_status,
-        # formulas_output=res_check.formulas_output,
         code_output=res_check.code_output,
+        input_data=res_check.input_data,
+        expected_output=res_check.expected_output,
+        user_output=res_check.user_output,
         execution_time=res_check.execution_time,
         code_length=res_check.code_length,
     ).model_dump()
@@ -164,7 +166,11 @@ async def get_task_info(task_id: int, authorization: str = Header(...)):
     status = "Success" if passed_solutions else "Failed"
 
     # Формирование ответа
-    solutions_info = [SolutionInfo(id = sol.id, code=sol.code, status=sol.status or "unknown", is_hidden=sol.is_hidden).model_dump() for sol in
+    solutions_info = [SolutionInfo(id = sol.id,
+                                    code=sol.code, 
+                                    status=sol.status or "unknown",
+                                    is_hidden=sol.is_hidden,
+                                    test_result=sol.test_result).model_dump() for sol in
                       user_solutions]
     return JSONResponse(
         status_code=HTTPStatus.OK,

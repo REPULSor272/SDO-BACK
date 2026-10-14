@@ -92,7 +92,7 @@ def get_user_solutions_by_task(user_id, task_id):
     with Session() as session:
         try:
             # Запрос решений пользователя для конкретной задачи
-            solutions = session.query(Solution).filter_by(User_id=user_id, Task_id=task_id, is_hidden =False).all()
+            solutions = session.query(Solution).filter_by(User_id=user_id, Task_id=task_id).all()
 
             # Если решения не найдены, возвращаем пустой список или выбрасываем ошибку
             if not solutions:
@@ -219,6 +219,18 @@ def get_solutions_by_user(user_id):
         except Exception as e:
             print(f"Error retrieving solutions for user with ID {user_id}: {e}")
             raise
+
+def update_solution_test_result(solution_id, status, test_result):
+    with Session() as session:
+        solution = session.query(Solution).filter_by(id=solution_id).first()
+
+        if solution is None:
+            raise ValueError(f"Solution {solution_id} not found")
+
+        solution.status = status
+        solution.test_result = test_result
+
+        session.commit()
 
 
 def get_latest_solution(user_id: int, task_id: int) -> Solution | None:

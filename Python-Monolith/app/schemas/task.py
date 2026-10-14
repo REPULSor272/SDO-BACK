@@ -7,6 +7,7 @@ class SolutionInfo(BaseModel):
     code: str = ""
     status: str = ""
     is_hidden: bool
+    test_result: dict | None = None
 
 class TaskInfo(BaseModel):
     id: int = 0

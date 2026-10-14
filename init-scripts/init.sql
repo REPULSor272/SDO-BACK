@@ -78,6 +78,7 @@ CREATE TABLE "Solution"
     "formulaTestResult" BOOLEAN,
     "autoTestResult"    INTEGER,
     status              VARCHAR,
+    test_result         JSONB,
     "User_id"           INTEGER NOT NULL REFERENCES "User" (id) ON DELETE CASCADE,
     "Task_id"           INTEGER REFERENCES "Task" (id) ON DELETE CASCADE
 );

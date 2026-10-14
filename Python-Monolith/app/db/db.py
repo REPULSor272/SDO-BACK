@@ -4,7 +4,7 @@ from sqlalchemy import create_engine, Column, Integer, String, ForeignKey, Table
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship, sessionmaker, InstrumentedAttribute
-from sqlalchemy.dialects.postgresql import ENUM
+from sqlalchemy.dialects.postgresql import ENUM, JSONB
 
 from app.config.settings import get_settings
 from app.schemas.auth import RegisterRequest
@@ -102,6 +102,7 @@ class Solution(Base):
     formulaTestResult = Column(Boolean, nullable=True)
     autoTestResult = Column(Integer, nullable=True)
     status = Column(String, nullable=True)
+    test_result = Column(JSONB, nullable=True)
     User_id = Column(Integer, ForeignKey('User.id', ondelete='CASCADE'), nullable=False)
     Task_id = Column(Integer, ForeignKey('Task.id', ondelete='CASCADE'), nullable=True)
     user = relationship('User', back_populates='solutions')

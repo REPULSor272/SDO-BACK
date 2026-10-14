@@ -11,7 +11,7 @@ import requests
 import json
 
 from app.config.settings import CSAppSettings, get_settings
-from app.db.task_methods import get_test_cases_by_task, update_solution_status
+from app.db.task_methods import get_test_cases_by_task, update_solution_status, update_solution_test_result
 from  app.schemas.tests import TestCase
 
 class SubjectTypes(IntEnum):
@@ -281,36 +281,42 @@ async def run_tests(task_id: int, code_str: str) -> dict:
 
 
 # main testing function
-async def check_file(task_id: int, subject_id: int, teacher_formula: str, input_variables: str, student_code: str,
+async def check_file(task_id: int, subject_id: int, teacher_formula: str,
+                     input_variables: str, student_code: str,
                      solution_id: int) -> TestCase:
-    # Проверка формул
-    # formulas_output, formulas_correct = await check_formulas(teacher_formula, input_variables, student_code)
 
-    # Выполнение тестов
     match subject_id:
         case SubjectTypes.Python.value:
-            # Выполнение тестов
             test_result = await run_tests(task_id, student_code)
+
         case SubjectTypes.CSharp.value:
-            # Выполнение тестов на C#
             test_result = await run_c_sharp_tests(task_id, student_code)
 
+        case _:
+            raise ValueError("Unsupported subject")
+
     if test_result.get("status") == "Failed":
-        update_solution_status(solution_id, "Failed")
-        return TestCase(
-            code_output=f"Test case {test_result['test_case_number']} failed.\n"
-                        f"Input: {test_result['input_data']}\n"
-                        f"Expected output: {test_result['expected_output']}\n"
-                        f"User output: {test_result['user_output']}",
+        result = TestCase(
+            code_output=f"Test case {test_result['test_case_number']} failed.",
+            input_data=test_result["input_data"],
+            expected_output=test_result["expected_output"],
+            user_output=test_result["user_output"],
             execution_time=0.0,
+            code_length=0,
+            execution_status="Failed"
+        )
+    else:
+        result = TestCase(
+            code_output="All tests passed successfully.",
+            execution_time=test_result["total_execution_time"],
             code_length=0,
             execution_status=test_result["status"]
         )
 
-    update_solution_status(solution_id, "Success")
-    return TestCase(
-        code_output="All tests passed successfully.",
-        execution_time=test_result['total_execution_time'],
-        code_length=0,
-        execution_status=test_result["status"]
+    update_solution_test_result(
+        solution_id,
+        result.execution_status,
+        result.model_dump(mode="json")
     )
+
+    return result
