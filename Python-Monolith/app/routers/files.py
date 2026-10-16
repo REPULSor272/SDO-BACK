@@ -18,6 +18,7 @@ from app.schemas.test import ResponseTest
 from app.testing_pyfiles.test import check_file
 from app.utils.utils import response_with_json
 from app.db.student_methods import get_student_labs_file
+from app.db.user_task_attempt import add_attempt, get_attempt
 
 router = APIRouter()
 
@@ -104,6 +105,16 @@ async def test_solution(task_id: int, authorization: str = Header(...)):
             content={"error": "Solution not found."}
         )
 
+    #Проверка, на кол-во попыток
+    attempst = get_attempt(check_data['user_id'], task_id)
+    print(attempst, task_data['max_attempts'])
+    if attempst['attempt_used'] >= task_data['max_attempts']:
+        return JSONResponse(
+                status_code=HTTPStatus.NOT_FOUND,
+                content={"error": "Attempst limit"}
+            )
+
+
     # Выполнение тестирования
     res_check = await check_file(
         task_id,
@@ -123,6 +134,8 @@ async def test_solution(task_id: int, authorization: str = Header(...)):
         execution_time=res_check.execution_time,
         code_length=res_check.code_length,
     ).model_dump()
+
+    add_attempt(check_data['user_id'], task_id)
 
     if res_check.execution_status == "Failed":
         return response_with_json(
@@ -172,6 +185,9 @@ async def get_task_info(task_id: int, authorization: str = Header(...)):
                                     is_hidden=sol.is_hidden,
                                     test_result=sol.test_result).model_dump() for sol in
                       user_solutions]
+
+    attempts_info = get_attempt(check_data['user_id'], task_id)
+    
     return JSONResponse(
         status_code=HTTPStatus.OK,
         content=TaskInfo(
@@ -180,6 +196,8 @@ async def get_task_info(task_id: int, authorization: str = Header(...)):
             description=task_data['description'],
             count_subtasks=1,
             status=status,
+            attempts_user = attempts_info,
+            max_attempts = task_data['max_attempts'],
             solutions=solutions_info,
         ).model_dump()
     )

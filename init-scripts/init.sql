@@ -64,6 +64,7 @@ CREATE TABLE "Task"
     teacher_formula VARCHAR,
     input_variables VARCHAR,
     status          VARCHAR CHECK ( status IN ('published', 'unpublished') ),
+    max_attempts INTEGER NOT NULL DEFAULT 100,
     "Subject_id"    INTEGER      NOT NULL REFERENCES "Subject" (id) ON DELETE CASCADE,
     "Group_id"      INTEGER      REFERENCES "Group" (id) ON DELETE SET NULL
 );
@@ -89,6 +90,16 @@ CREATE TABLE "TestCase"
     inp       VARCHAR(512) NOT NULL,
     out       VARCHAR(512) NOT NULL,
     "Task_id" INTEGER REFERENCES "Task" (id) ON DELETE CASCADE
+);
+
+CREATE TABLE "UserTaskAttempt"
+(
+    id            SERIAL PRIMARY KEY,
+    "User_id"     INTEGER NOT NULL REFERENCES "User" (id) ON DELETE CASCADE,
+    "Task_id"     INTEGER NOT NULL REFERENCES "Task" (id) ON DELETE CASCADE,
+    attempts_used INTEGER NOT NULL DEFAULT 0,
+    attempts_all  INTEGER NOT NULL DEFAULT 0,
+    UNIQUE ("User_id", "Task_id")
 );
 
 INSERT INTO "Faculty" (name)

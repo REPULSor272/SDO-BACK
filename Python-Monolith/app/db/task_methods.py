@@ -19,7 +19,8 @@ def get_task_data(task_id: int) -> dict | None:
                 "name": task.name,
                 "description": task.description,
                 "teacher_formula": task.teacher_formula,
-                "input_variables": task.input_variables
+                "input_variables": task.input_variables,
+                "max_attempts": task.max_attempts
             }
         return None
 

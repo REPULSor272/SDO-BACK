@@ -1,6 +1,6 @@
 from typing import Union, Type, Any
 
-from sqlalchemy import create_engine, Column, Integer, String, ForeignKey, Table, Boolean, Float, func, case
+from sqlalchemy import create_engine, Column, Integer, String, ForeignKey, Table, Boolean, Float, func, case, UniqueConstraint
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship, sessionmaker, InstrumentedAttribute
@@ -116,6 +116,7 @@ class Task(Base):
     description = Column(String(2048), nullable=True)
     teacher_formula = Column(String, nullable=True)
     input_variables = Column(String, nullable=True)
+    max_attempts = Column(Integer, nullable=False, default=100)
     status = Column(String, nullable=False)
     Subject_id = Column(Integer, ForeignKey('Subject.id', ondelete='CASCADE'), nullable=False)
     Group_id = Column(Integer, ForeignKey('Group.id', ondelete='SET NULL'), nullable=True)
@@ -131,6 +132,27 @@ class TestCase(Base):
     out = Column(String(512), nullable=False)
     Task_id = Column(Integer, ForeignKey('Task.id', ondelete='CASCADE'), nullable=True)
     task = relationship('Task', back_populates='testCases')
+
+class UserTaskAttempt(Base):
+    __tablename__ = "UserTaskAttempt"
+
+    id = Column(Integer, primary_key=True)
+    User_id = Column(
+        Integer,
+        ForeignKey('User.id', ondelete='CASCADE'),
+        nullable=False
+    )
+    Task_id = Column(
+        Integer,
+        ForeignKey('Task.id', ondelete='CASCADE'),
+        nullable=False
+    )
+    attempts_used = Column(Integer, nullable=False, default=0)
+    attempts_all = Column(Integer, nullable=False, default=0)
+
+    __table_args__ = (
+        UniqueConstraint('User_id', 'Task_id'),
+    )
 
 def delete_tables():
     Base.metadata.drop_all(engine)

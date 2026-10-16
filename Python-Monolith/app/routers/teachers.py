@@ -19,6 +19,7 @@ from app.schemas.teachers import (
 from app.schemas.users import FullUserInfo
 from app.utils.utils import response_with_json, response_with_error
 from app.schemas.task import MarkUpdateSchema, StudentTaskResult
+from app.db.user_task_attempt import reset_attempt
 
 router = APIRouter(prefix="/api/teachers")
 
@@ -180,6 +181,7 @@ async def get_subjects(request: Request):
 # Создание лабораторной работы
 @router.post("/lab", response_model=CreateLabRequest)
 async def create_lab(lab: CreateLabRequest):
+    print(lab.task)
     created_task = create_laboratory(lab.task)
     if created_task is None:
         return response_with_error(
@@ -315,6 +317,7 @@ async def get_unpublished_task_details(lab_id: int):
         input_variables=labs.get("input_variables"),
         subject_id=labs.get("subject_id"),
         group_id=labs.get("group_id"),
+        max_attempts=labs.get("max_attempts"),
         test_cases=[{"id": case.get("id"), "inp": case["input"], "out": case["output"]} for case in labs.get("test_cases", [])]
 ).model_dump()
 
@@ -376,3 +379,19 @@ async def set_latest_mark(
         "student_id": student_id,
         "new_mark": data.mark
     }
+
+@router.patch("/task/{task_id}/student/{student_id}/reset_attemps")
+async def reset(student_id, task_id, authorization: Optional[str] = Header(None)):
+    if not authorization:
+        return JSONResponse(
+            status_code=HTTPStatus.UNAUTHORIZED,
+            content={"detail": "Authorization header missing"}
+        )
+    check_data = check_auth(authorization)
+    if isinstance(check_data, JSONResponse):
+        return check_data
+    success = reset_attempt(student_id, task_id)
+    if success:
+        return {"message": "Попытки сброшены успешно"}
+    else:
+         return {"message": "Сбросить попытки не удалось"}

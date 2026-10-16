@@ -50,6 +50,7 @@ class TaskBaseSchema(BaseModel):
     description: Optional[str] = None
     teacher_formula: Optional[str] = None
     input_variables: Optional[str] = None
+    max_attempts: int = 100
     subject_id: int
     group_id: Optional[int] = None
 

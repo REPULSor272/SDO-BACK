@@ -15,6 +15,8 @@ class TaskInfo(BaseModel):
     description: str = ""
     count_subtasks: int = 0
     status: str = ""
+    attempts_user: dict
+    max_attempts: int
     solutions: list[SolutionInfo] = []
 
 class Task(BaseModel):

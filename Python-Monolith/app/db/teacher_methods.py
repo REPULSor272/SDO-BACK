@@ -108,6 +108,7 @@ def create_laboratory(task: TaskWithTestCasesSchema):
                 Group_id=task.group_id,
                 teacher_formula=task.teacher_formula,
                 input_variables=task.input_variables,
+                max_attempts = task.max_attempts,
                 status='unpublished'
             )
             session.add(lab)
@@ -286,6 +287,7 @@ def get_lab_details(lab_id: int) -> dict | None:
                 "input_variables": lab.input_variables,
                 "subject_id": lab.Subject_id,
                 "group_id": lab.Group_id,
+                "max_attempts": lab.max_attempts,
                 "test_cases": []
             }
 
@@ -325,6 +327,7 @@ def edit_lab(task_id: int, lab: UpdateLabRequest):
             lab_to_update.teacher_formula = lab.task.teacher_formula
             lab_to_update.input_variables = lab.task.input_variables
             lab_to_update.Subject_id = lab.task.subject_id
+            lab_to_update.max_attempts = lab.task.max_attempts
             lab_to_update.Group_id = lab.task.group_id
 
             # Удаляем старые тест-кейсы
@@ -367,3 +370,4 @@ def update_latest_solution_mark(student_id: int, task_id: int, new_mark: int) ->
         latest_solution.mark = new_mark
         session.commit()
         return True
+
