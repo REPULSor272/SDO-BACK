@@ -11,7 +11,7 @@ import requests
 import json
 
 from app.config.settings import CSAppSettings, get_settings
-from app.db.task_methods import get_test_cases_by_task, update_solution_status, update_solution_test_result
+from app.db.task_methods import get_test_cases_by_task, update_solution_test_result
 from  app.schemas.tests import TestCase
 
 class SubjectTypes(IntEnum):
@@ -155,9 +155,41 @@ async def check_formulas(teacher_formula_str, input_variables_str, code_str) -> 
 
     return res, all_formulas_correct
 
-async def run_c_sharp_tests(task_id: int, code_str: str) -> dict: 
+
+def _count_code_lines(code_str: str) -> int:
+    return sum(1 for line in code_str.split('\n') if line.strip())
+
+
+def _limit_fail(message: str, code_length: int | None = None) -> dict:
+    return {
+        "test_case_number": 0,
+        "input_data": "",
+        "user_output": message,
+        "expected_output": "",
+        "status": "Failed",
+        "fail_reason": message,
+        "code_length": code_length,
+        "total_execution_time": 0.0,
+        "memory_used_mb": None,
+    }
+
+
+async def run_c_sharp_tests(
+    task_id: int,
+    code_str: str,
+    max_code_length: int | None = None,
+    max_execution_time_sec: int | None = None,
+    max_memory_mb: int | None = None,
+) -> dict:
     cs_service_cfg = get_settings().cs_app
-    
+
+    code_length = _count_code_lines(code_str)
+    if max_code_length is not None and code_length > max_code_length:
+        return _limit_fail(
+            f"Превышена длина кода: {code_length} строк (лимит {max_code_length}).",
+            code_length=code_length,
+        )
+
     test_cases = get_test_cases_by_task(task_id)
 
     if not test_cases:
@@ -166,14 +198,20 @@ async def run_c_sharp_tests(task_id: int, code_str: str) -> dict:
             "input_data": "No test cases found.",
             "user_output": "",
             "expected_output": "",
-            "status": "Failed"
+            "status": "Failed",
+            "code_length": code_length,
         }
 
     headers = {
         'Content-Type': 'application/json',
         'Accept': 'application/json'
     }
-   
+
+    test_limits = {}
+    if max_execution_time_sec is not None:
+        test_limits["MaxExecutionTimeMs"] = max_execution_time_sec * 1000
+    if max_memory_mb is not None:
+        test_limits["MaxMemoryBytes"] = max_memory_mb * 1024 * 1024
 
     start_time = time.time()
     response_data = {}
@@ -181,40 +219,60 @@ async def run_c_sharp_tests(task_id: int, code_str: str) -> dict:
         data = {
             "StringCode": code_str,
             "Test": {
-                "Input":test_case.inp,
-                "ExpectedOutput": test_case.out
+                "Input": test_case.inp,
+                "ExpectedOutput": test_case.out,
+                **test_limits,
             }
         }
         response = requests.post(
             f'http://{cs_service_cfg.host}:{str(cs_service_cfg.port)}/CDiazCodeLab/CodeCheck/RunTestsFromString',
             data=json.dumps(data),
-            headers=headers 
+            headers=headers
         )
 
         response_data = response.json()
-        result_data = response_data.get('result')
-        
-        if not(result_data.get('passed')) or response_data.get('errorMessage'):
+        result_data = response_data.get('result') or {}
+
+        if not result_data.get('passed') or response_data.get('errorMessage'):
+            error_message = (
+                result_data.get('errorMessage')
+                or response_data.get('errorMessage')
+                or ""
+            )
             return {
                 "test_case_number": index + 1,
-                "input_data": result_data.get('testCase').get('input'),
-                "user_output": result_data.get('actualOutput'),
-                "expected_output": result_data.get('testCase').get('expeexpectedOutput'),
-                "status": "Failed"
+                "input_data": (result_data.get('testCase') or {}).get('input', test_case.inp),
+                "user_output": result_data.get('actualOutput') or error_message,
+                "expected_output": (result_data.get('testCase') or {}).get('expectedOutput', test_case.out),
+                "status": "Failed",
+                "fail_reason": error_message or None,
+                "code_length": code_length,
             }
-        index += 1
-    
+
     end_time = time.time()
     execution_time = round(end_time - start_time, 3)
 
+    if max_execution_time_sec is not None and execution_time > max_execution_time_sec:
+        return _limit_fail(
+            f"Превышено время выполнения: {execution_time} сек (лимит {max_execution_time_sec}).",
+            code_length=code_length,
+        )
+
     return {
-        "total_execution_time": round(execution_time, 3),
-        "code_length": response_data.get('lineCount'),
+        "total_execution_time": execution_time,
+        "code_length": code_length,
         "execution_status": "Success",
         "status": "Success"
     }
 
-async def run_tests(task_id: int, code_str: str) -> dict:
+
+async def run_tests(
+    task_id: int,
+    code_str: str,
+    max_code_length: int | None = None,
+    max_execution_time_sec: int | None = None,
+    max_memory_mb: int | None = None,
+) -> dict:
     test_cases = get_test_cases_by_task(task_id)
     if not test_cases:
         return {
@@ -222,20 +280,27 @@ async def run_tests(task_id: int, code_str: str) -> dict:
             "input_data": "No test cases found.",
             "user_output": "",
             "expected_output": "",
-            "status": "Failed"
+            "status": "Failed",
+            "code_length": 0,
         }
 
     total_execution_time = 0
-    code_length = sum(1 for line in code_str.split('\n') if line.strip())
+    code_length = _count_code_lines(code_str)
+
+    if max_code_length is not None and code_length > max_code_length:
+        return _limit_fail(
+            f"Превышена длина кода: {code_length} строк (лимит {max_code_length}).",
+            code_length=code_length,
+        )
+
+    per_case_timeout = max_execution_time_sec if max_execution_time_sec is not None else 5
 
     for index, test_case in enumerate(test_cases):
         input_data = test_case.inp
         expected_output = test_case.out
 
-        # Подготовка кода с входными данными
         code_with_input = f"import sys\ninput = lambda: '{input_data}'\n{code_str}"
 
-        # Выполнение кода
         output = io.StringIO()
         start_time = time.time()
         execute_status = True
@@ -251,25 +316,35 @@ async def run_tests(task_id: int, code_str: str) -> dict:
 
         thread = threading.Thread(target=exec_code)
         thread.start()
-        thread.join(timeout=5)
+        thread.join(timeout=per_case_timeout)
 
         if thread.is_alive():
             output.write("Execution timed out.")
             thread.join()
+            return _limit_fail(
+                f"Превышено время выполнения: лимит {per_case_timeout} сек.",
+                code_length=code_length,
+            )
 
         end_time = time.time()
         execution_time = round(end_time - start_time, 3)
         total_execution_time += execution_time
         result = output.getvalue()
 
-        # Сравнение результата с ожидаемым выводом
+        if max_execution_time_sec is not None and execution_time > max_execution_time_sec:
+            return _limit_fail(
+                f"Превышено время выполнения: {execution_time} сек (лимит {max_execution_time_sec}).",
+                code_length=code_length,
+            )
+
         if result.strip() != expected_output.strip():
             return {
                 "test_case_number": index + 1,
                 "input_data": input_data,
                 "user_output": result.strip(),
                 "expected_output": expected_output.strip(),
-                "status": "Failed"
+                "status": "Failed",
+                "code_length": code_length,
             }
 
     return {
@@ -281,42 +356,68 @@ async def run_tests(task_id: int, code_str: str) -> dict:
 
 
 # main testing function
-async def check_file(task_id: int, subject_id: int, teacher_formula: str,
-                     input_variables: str, student_code: str,
-                     solution_id: int) -> TestCase:
+async def check_file(
+    task_id: int,
+    subject_id: int,
+    teacher_formula: str,
+    input_variables: str,
+    student_code: str,
+    solution_id: int,
+    max_code_length: int | None = None,
+    max_execution_time_sec: int | None = None,
+    max_memory_mb: int | None = None,
+) -> TestCase:
+
+    limits = {
+        "max_code_length": max_code_length,
+        "max_execution_time_sec": max_execution_time_sec,
+        "max_memory_mb": max_memory_mb,
+    }
 
     match subject_id:
         case SubjectTypes.Python.value:
-            test_result = await run_tests(task_id, student_code)
+            test_result = await run_tests(task_id, student_code, **limits)
 
         case SubjectTypes.CSharp.value:
-            test_result = await run_c_sharp_tests(task_id, student_code)
+            test_result = await run_c_sharp_tests(task_id, student_code, **limits)
 
         case _:
             raise ValueError("Unsupported subject")
 
     if test_result.get("status") == "Failed":
+        fail_reason = test_result.get("fail_reason")
+        code_output = (
+            fail_reason
+            if fail_reason and test_result.get("test_case_number") in (None, 0, -1)
+            else f"Test case {test_result['test_case_number']} failed."
+        )
         result = TestCase(
-            code_output=f"Test case {test_result['test_case_number']} failed.",
-            input_data=test_result["input_data"],
-            expected_output=test_result["expected_output"],
-            user_output=test_result["user_output"],
+            code_output=code_output,
+            input_data=test_result.get("input_data", ""),
+            expected_output=test_result.get("expected_output", ""),
+            user_output=test_result.get("user_output", ""),
             execution_time=0.0,
-            code_length=0,
+            code_length=test_result.get("code_length", 0),
             execution_status="Failed"
         )
     else:
         result = TestCase(
             code_output="All tests passed successfully.",
+            input_data="",
+            expected_output="",
+            user_output="",
             execution_time=test_result["total_execution_time"],
-            code_length=0,
+            code_length=test_result.get("code_length", 0),
             execution_status=test_result["status"]
         )
 
     update_solution_test_result(
         solution_id,
         result.execution_status,
-        result.model_dump(mode="json")
+        result.model_dump(mode="json"),
+        code_length=result.code_length,
+        execution_time=result.execution_time,
+        memory_used_mb=result.memory_used_mb,
     )
 
     return result

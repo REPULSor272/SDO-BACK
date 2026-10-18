@@ -51,6 +51,9 @@ class TaskBaseSchema(BaseModel):
     teacher_formula: Optional[str] = None
     input_variables: Optional[str] = None
     max_attempts: int = 100
+    max_code_length: Optional[int] = None
+    max_execution_time_sec: Optional[int] = None
+    max_memory_mb: Optional[int] = None
     subject_id: int
     group_id: Optional[int] = None
 
@@ -90,4 +93,7 @@ class DetailLab(BaseModel):
     input_variables: Optional[str] = None
     subject_id: int
     group_id: Optional[int] = None
+    max_code_length: Optional[int] = None
+    max_execution_time_sec: Optional[int] = None
+    max_memory_mb: Optional[int] = None
     test_cases: List[TestCaseSchema]

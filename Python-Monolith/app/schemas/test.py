@@ -1,3 +1,5 @@
+from typing import Optional
+
 from pydantic import BaseModel
 
 class ResponseTest(BaseModel):
@@ -8,3 +10,4 @@ class ResponseTest(BaseModel):
     user_output: str | None = None
     execution_time: float
     code_length: int
+    memory_used_mb: Optional[float] = None

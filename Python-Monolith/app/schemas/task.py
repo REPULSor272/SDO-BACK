@@ -17,6 +17,9 @@ class TaskInfo(BaseModel):
     status: str = ""
     attempts_user: dict
     max_attempts: int
+    max_code_length: Optional[int] = None
+    max_execution_time_sec: Optional[int] = None
+    max_memory_mb: Optional[int] = None
     solutions: list[SolutionInfo] = []
 
 class Task(BaseModel):

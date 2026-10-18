@@ -92,6 +92,7 @@ class Subject(Base):
     groups_link = relationship("GroupSubject", back_populates="subject", overlaps="groups,subjects")
     tasks = relationship('Task', back_populates='subject')
 
+
 class Solution(Base):
     __tablename__ = 'Solution'
     id = Column(Integer, primary_key=True)
@@ -103,6 +104,9 @@ class Solution(Base):
     autoTestResult = Column(Integer, nullable=True)
     status = Column(String, nullable=True)
     test_result = Column(JSONB, nullable=True)
+    codeLength = Column(Integer, nullable=True)
+    executionTime = Column(Float, nullable=True)
+    memoryUsedMb = Column(Float, nullable=True)
     User_id = Column(Integer, ForeignKey('User.id', ondelete='CASCADE'), nullable=False)
     Task_id = Column(Integer, ForeignKey('Task.id', ondelete='CASCADE'), nullable=True)
     user = relationship('User', back_populates='solutions')
@@ -117,6 +121,9 @@ class Task(Base):
     teacher_formula = Column(String, nullable=True)
     input_variables = Column(String, nullable=True)
     max_attempts = Column(Integer, nullable=False, default=100)
+    maxCodeLength = Column(Integer, nullable=True)
+    maxExecutionTimeSec = Column(Integer, nullable=True)
+    maxMemoryMb = Column(Integer, nullable=True)
     status = Column(String, nullable=False)
     Subject_id = Column(Integer, ForeignKey('Subject.id', ondelete='CASCADE'), nullable=False)
     Group_id = Column(Integer, ForeignKey('Group.id', ondelete='SET NULL'), nullable=True)
@@ -132,6 +139,7 @@ class TestCase(Base):
     out = Column(String(512), nullable=False)
     Task_id = Column(Integer, ForeignKey('Task.id', ondelete='CASCADE'), nullable=True)
     task = relationship('Task', back_populates='testCases')
+
 
 class UserTaskAttempt(Base):
     __tablename__ = "UserTaskAttempt"
@@ -153,6 +161,7 @@ class UserTaskAttempt(Base):
     __table_args__ = (
         UniqueConstraint('User_id', 'Task_id'),
     )
+
 
 def delete_tables():
     Base.metadata.drop_all(engine)

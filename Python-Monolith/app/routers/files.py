@@ -122,7 +122,10 @@ async def test_solution(task_id: int, authorization: str = Header(...)):
         task_data['teacher_formula'],
         task_data['input_variables'],
         latest_solution.code,
-        latest_solution.id
+        latest_solution.id,
+        task_data.get('max_code_length'),
+        task_data.get('max_execution_time_sec'),
+        task_data.get('max_memory_mb'),
     )
 
     response = ResponseTest(
@@ -198,6 +201,9 @@ async def get_task_info(task_id: int, authorization: str = Header(...)):
             status=status,
             attempts_user = attempts_info,
             max_attempts = task_data['max_attempts'],
+            max_code_length = task_data.get('max_code_length'),
+            max_execution_time_sec = task_data.get('max_execution_time_sec'),
+            max_memory_mb = task_data.get('max_memory_mb'),
             solutions=solutions_info,
         ).model_dump()
     )
@@ -272,4 +278,3 @@ async def download_student_file(task_id: int, student_id: int, authorization: Op
             "Content-Disposition": f'attachment; filename="{filename}"'
         }
     )
-

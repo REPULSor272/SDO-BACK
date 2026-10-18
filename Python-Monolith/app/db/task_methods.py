@@ -20,7 +20,10 @@ def get_task_data(task_id: int) -> dict | None:
                 "description": task.description,
                 "teacher_formula": task.teacher_formula,
                 "input_variables": task.input_variables,
-                "max_attempts": task.max_attempts
+                "max_attempts": task.max_attempts,
+                "max_code_length": task.maxCodeLength,
+                "max_execution_time_sec": task.maxExecutionTimeSec,
+                "max_memory_mb": task.maxMemoryMb,
             }
         return None
 
@@ -149,17 +152,30 @@ def add_solution(code, user_id, task_id) -> str | bool:
             return "Error adding solution"
 
 
-def update_solution_status(solution_id: int, status: str):
+def update_solution_test_result(
+    solution_id,
+    status,
+    test_result,
+    code_length: int | None = None,
+    execution_time: float | None = None,
+    memory_used_mb: float | None = None,
+):
     with Session() as session:
-        try:
-            solution = session.query(Solution).filter_by(id=solution_id).first()
-            if solution:
-                solution.status = status
-                session.commit()
-        except Exception as e:
-            session.rollback()
-            print(f"Error updating solution status: {e}")
-            raise
+        solution = session.query(Solution).filter_by(id=solution_id).first()
+
+        if solution is None:
+            raise ValueError(f"Solution {solution_id} not found")
+
+        solution.status = status
+        solution.test_result = test_result
+        if code_length is not None:
+            solution.codeLength = code_length
+        if execution_time is not None:
+            solution.executionTime = execution_time
+        if memory_used_mb is not None:
+            solution.memoryUsedMb = memory_used_mb
+
+        session.commit()
 
 
 def update_solution_hidden(user_id: int, solution_id: int):
@@ -221,17 +237,7 @@ def get_solutions_by_user(user_id):
             print(f"Error retrieving solutions for user with ID {user_id}: {e}")
             raise
 
-def update_solution_test_result(solution_id, status, test_result):
-    with Session() as session:
-        solution = session.query(Solution).filter_by(id=solution_id).first()
 
-        if solution is None:
-            raise ValueError(f"Solution {solution_id} not found")
-
-        solution.status = status
-        solution.test_result = test_result
-
-        session.commit()
 
 
 def get_latest_solution(user_id: int, task_id: int) -> Solution | None:

@@ -7,6 +7,7 @@ DROP TABLE IF EXISTS "User";
 DROP TABLE IF EXISTS "Group";
 DROP TABLE IF EXISTS "Faculty";
 DROP TABLE IF EXISTS "Subject";
+DROP TABLE IF EXISTS "UserTaskAttempt";
 
 CREATE TABLE "Faculty"
 (
@@ -65,6 +66,9 @@ CREATE TABLE "Task"
     input_variables VARCHAR,
     status          VARCHAR CHECK ( status IN ('published', 'unpublished') ),
     max_attempts INTEGER NOT NULL DEFAULT 100,
+    "maxCodeLength" INTEGER,
+    "maxExecutionTimeSec" INTEGER,
+    "maxMemoryMb" INTEGER,
     "Subject_id"    INTEGER      NOT NULL REFERENCES "Subject" (id) ON DELETE CASCADE,
     "Group_id"      INTEGER      REFERENCES "Group" (id) ON DELETE SET NULL
 );
@@ -80,6 +84,9 @@ CREATE TABLE "Solution"
     "autoTestResult"    INTEGER,
     status              VARCHAR,
     test_result         JSONB,
+    "codeLength"        INTEGER,
+    "executionTime"     DOUBLE PRECISION,
+    "memoryUsedMb"      DOUBLE PRECISION,
     "User_id"           INTEGER NOT NULL REFERENCES "User" (id) ON DELETE CASCADE,
     "Task_id"           INTEGER REFERENCES "Task" (id) ON DELETE CASCADE
 );
@@ -199,5 +206,3 @@ VALUES ('1 2 3', '0 2', 1),
 INSERT INTO "Solution" (code, "User_id", "Task_id")
 VALUES ('print(''Hello, World!'')', 1, 1),
        ('print(''Hello, World!'')', 1, 3);
-
-

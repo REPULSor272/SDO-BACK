@@ -318,8 +318,11 @@ async def get_unpublished_task_details(lab_id: int):
         subject_id=labs.get("subject_id"),
         group_id=labs.get("group_id"),
         max_attempts=labs.get("max_attempts"),
+        max_code_length=labs.get("max_code_length"),
+        max_execution_time_sec=labs.get("max_execution_time_sec"),
+        max_memory_mb=labs.get("max_memory_mb"),
         test_cases=[{"id": case.get("id"), "inp": case["input"], "out": case["output"]} for case in labs.get("test_cases", [])]
-).model_dump()
+    ).model_dump()
 
     return JSONResponse(
         status_code=HTTPStatus.OK,
