@@ -67,8 +67,9 @@ CREATE TABLE "Task"
     status          VARCHAR CHECK ( status IN ('published', 'unpublished') ),
     max_attempts INTEGER NOT NULL DEFAULT 100,
     "maxCodeLength" INTEGER,
-    "maxExecutionTimeSec" INTEGER,
-    "maxMemoryMb" INTEGER,
+    "maxExecutionTimeSec" DOUBLE PRECISION,
+    "maxMemoryMb" DOUBLE PRECISION,
+    "maxVariables" INTEGER,
     "Subject_id"    INTEGER      NOT NULL REFERENCES "Subject" (id) ON DELETE CASCADE,
     "Group_id"      INTEGER      REFERENCES "Group" (id) ON DELETE SET NULL
 );

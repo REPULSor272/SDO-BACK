@@ -112,6 +112,7 @@ def create_laboratory(task: TaskWithTestCasesSchema):
                 maxCodeLength=task.max_code_length,
                 maxExecutionTimeSec=task.max_execution_time_sec,
                 maxMemoryMb=task.max_memory_mb,
+                maxVariables=task.max_variables,
                 status='unpublished'
             )
             session.add(lab)
@@ -294,6 +295,7 @@ def get_lab_details(lab_id: int) -> dict | None:
                 "max_code_length": lab.maxCodeLength,
                 "max_execution_time_sec": lab.maxExecutionTimeSec,
                 "max_memory_mb": lab.maxMemoryMb,
+                "max_variables": lab.maxVariables,
                 "test_cases": []
             }
 
@@ -337,6 +339,7 @@ def edit_lab(task_id: int, lab: UpdateLabRequest):
             lab_to_update.maxCodeLength = lab.task.max_code_length
             lab_to_update.maxExecutionTimeSec = lab.task.max_execution_time_sec
             lab_to_update.maxMemoryMb = lab.task.max_memory_mb
+            lab_to_update.maxVariables = lab.task.max_variables
             lab_to_update.Group_id = lab.task.group_id
 
             # Удаляем старые тест-кейсы

@@ -126,6 +126,7 @@ async def test_solution(task_id: int, authorization: str = Header(...)):
         task_data.get('max_code_length'),
         task_data.get('max_execution_time_sec'),
         task_data.get('max_memory_mb'),
+        task_data.get('max_variables'),
     )
 
     response = ResponseTest(
@@ -204,6 +205,7 @@ async def get_task_info(task_id: int, authorization: str = Header(...)):
             max_code_length = task_data.get('max_code_length'),
             max_execution_time_sec = task_data.get('max_execution_time_sec'),
             max_memory_mb = task_data.get('max_memory_mb'),
+            max_variables = task_data.get('max_variables'),
             solutions=solutions_info,
         ).model_dump()
     )

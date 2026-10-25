@@ -321,6 +321,7 @@ async def get_unpublished_task_details(lab_id: int):
         max_code_length=labs.get("max_code_length"),
         max_execution_time_sec=labs.get("max_execution_time_sec"),
         max_memory_mb=labs.get("max_memory_mb"),
+        max_variables=labs.get("max_variables"),
         test_cases=[{"id": case.get("id"), "inp": case["input"], "out": case["output"]} for case in labs.get("test_cases", [])]
     ).model_dump()
 

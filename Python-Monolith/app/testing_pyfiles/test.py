@@ -1,3 +1,4 @@
+import ast
 import contextlib
 from enum import IntEnum
 import io
@@ -160,6 +161,25 @@ def _count_code_lines(code_str: str) -> int:
     return sum(1 for line in code_str.split('\n') if line.strip())
 
 
+def _count_python_variables(code_str: str) -> int | None:
+    """Число уникальных имён, которым в коде что-то присваивается.
+
+    Считаются: присваивания (в т.ч. множественные), +=, аннотированные,
+    переменные циклов for и генераторов, with ... as, :=.
+    Не считаются: параметры функций, имена функций/классов, атрибуты (self.x).
+    При синтаксической ошибке возвращает None.
+    """
+    try:
+        tree = ast.parse(code_str)
+    except SyntaxError:
+        return None
+    return len({
+        node.id
+        for node in ast.walk(tree)
+        if isinstance(node, ast.Name) and isinstance(node.ctx, ast.Store)
+    })
+
+
 def _limit_fail(message: str, code_length: int | None = None) -> dict:
     return {
         "test_case_number": 0,
@@ -178,8 +198,9 @@ async def run_c_sharp_tests(
     task_id: int,
     code_str: str,
     max_code_length: int | None = None,
-    max_execution_time_sec: int | None = None,
-    max_memory_mb: int | None = None,
+    max_execution_time_sec: float | None = None,
+    max_memory_mb: float | None = None,
+    max_variables: int | None = None,
 ) -> dict:
     cs_service_cfg = get_settings().cs_app
 
@@ -209,9 +230,9 @@ async def run_c_sharp_tests(
 
     test_limits = {}
     if max_execution_time_sec is not None:
-        test_limits["MaxExecutionTimeMs"] = max_execution_time_sec * 1000
+        test_limits["MaxExecutionTimeMs"] = int(max_execution_time_sec * 1000)
     if max_memory_mb is not None:
-        test_limits["MaxMemoryBytes"] = max_memory_mb * 1024 * 1024
+        test_limits["MaxMemoryBytes"] = int(max_memory_mb * 1024 * 1024)
 
     start_time = time.time()
     response_data = {}
@@ -270,8 +291,9 @@ async def run_tests(
     task_id: int,
     code_str: str,
     max_code_length: int | None = None,
-    max_execution_time_sec: int | None = None,
-    max_memory_mb: int | None = None,
+    max_execution_time_sec: float | None = None,
+    max_memory_mb: float | None = None,
+    max_variables: int | None = None,
 ) -> dict:
     test_cases = get_test_cases_by_task(task_id)
     if not test_cases:
@@ -292,6 +314,14 @@ async def run_tests(
             f"Превышена длина кода: {code_length} строк (лимит {max_code_length}).",
             code_length=code_length,
         )
+
+    if max_variables is not None:
+        variables_count = _count_python_variables(code_str)
+        if variables_count is not None and variables_count > max_variables:
+            return _limit_fail(
+                f"Превышено число переменных: {variables_count} (лимит {max_variables}).",
+                code_length=code_length,
+            )
 
     per_case_timeout = max_execution_time_sec if max_execution_time_sec is not None else 5
 
@@ -364,14 +394,16 @@ async def check_file(
     student_code: str,
     solution_id: int,
     max_code_length: int | None = None,
-    max_execution_time_sec: int | None = None,
-    max_memory_mb: int | None = None,
+    max_execution_time_sec: float | None = None,
+    max_memory_mb: float | None = None,
+    max_variables: int | None = None,
 ) -> TestCase:
 
     limits = {
         "max_code_length": max_code_length,
         "max_execution_time_sec": max_execution_time_sec,
         "max_memory_mb": max_memory_mb,
+        "max_variables": max_variables,
     }
 
     match subject_id:

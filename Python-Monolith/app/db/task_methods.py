@@ -24,6 +24,7 @@ def get_task_data(task_id: int) -> dict | None:
                 "max_code_length": task.maxCodeLength,
                 "max_execution_time_sec": task.maxExecutionTimeSec,
                 "max_memory_mb": task.maxMemoryMb,
+                "max_variables": task.maxVariables,
             }
         return None
 
