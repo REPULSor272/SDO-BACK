@@ -210,6 +210,24 @@ async def get_task_info(task_id: int, authorization: str = Header(...)):
         ).model_dump()
     )
 
+@router.get("/task/{task_id}/student/{student_id}")
+async def get_task_student(task_id, student_id):
+    user_solutions = get_user_solutions_by_task(student_id, task_id)
+
+    solutions_info = [SolutionInfo(
+                        id = sol.id,
+                        code=sol.code, 
+                        status=sol.status or "unknown",
+                        is_hidden=sol.is_hidden,
+                        test_result=sol.test_result).model_dump() for sol in  user_solutions]
+    
+    attempts_info = get_attempt(student_id, task_id)
+
+    return JSONResponse(
+            status_code=HTTPStatus.OK,
+            content=solutions_info 
+        )
+
 
 @router.post("/task/solution/{solution_id}/hide", summary="Скрытие конкретного решения")
 async def hide_solution(solution_id: int, authorization: str = Header(...)):
