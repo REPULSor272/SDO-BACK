@@ -11,3 +11,4 @@ class TestCase(BaseModel):
     code_length: int
     execution_status: str
     memory_used_mb: Optional[float] = None
+    variables_used: int | None = None

@@ -1,0 +1,1 @@
+ALTER TABLE "Solution" ADD COLUMN IF NOT EXISTS "usedVariables" INTEGER;

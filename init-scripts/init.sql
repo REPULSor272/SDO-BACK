@@ -88,6 +88,7 @@ CREATE TABLE "Solution"
     "codeLength"        INTEGER,
     "executionTime"     DOUBLE PRECISION,
     "memoryUsedMb"      DOUBLE PRECISION,
+    "usedVariables" INTEGER,
     "User_id"           INTEGER NOT NULL REFERENCES "User" (id) ON DELETE CASCADE,
     "Task_id"           INTEGER REFERENCES "Task" (id) ON DELETE CASCADE
 );

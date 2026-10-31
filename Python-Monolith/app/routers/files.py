@@ -17,7 +17,7 @@ from app.schemas.task import TaskInfo, SolutionInfo
 from app.schemas.test import ResponseTest
 from app.testing_pyfiles.test import check_file
 from app.utils.utils import response_with_json
-from app.db.student_methods import get_student_labs_file
+from app.db.student_methods import get_student_labs_code, get_student_labs_last_file
 from app.db.user_task_attempt import add_attempt, get_attempt
 
 router = APIRouter()
@@ -225,7 +225,10 @@ async def get_task_student(task_id, student_id):
 
     return JSONResponse(
             status_code=HTTPStatus.OK,
-            content=solutions_info 
+            content={
+            "solutions": solutions_info,
+            "attempts": attempts_info
+            }
         )
 
 
@@ -280,7 +283,7 @@ async def download_student_file(task_id: int, student_id: int, authorization: Op
         return check_data
     
     # 2. Достаем код через нашу функцию
-    code_text = get_student_labs_file(student_id=student_id, task_id=task_id)
+    code_text = get_student_labs_last_file(student_id=student_id, task_id=task_id)
     
     if not code_text:
         return JSONResponse(
@@ -291,6 +294,36 @@ async def download_student_file(task_id: int, student_id: int, authorization: Op
     # 3. Отдаем как файл для скачивания
     filename = f"lab_{task_id}_student_{student_id}.py"
     
+    return Response(
+        content=code_text,
+        media_type="text/x-python",
+        headers={
+            "Content-Disposition": f'attachment; filename="{filename}"'
+        }
+    )
+
+@router.get("/task/{task_id}/download/{student_id}/{solution_id}")
+async def download_student_file(task_id: int, student_id: int, solution_id:int, authorization: Optional[str] = Header(None)):
+    if not authorization:
+        return JSONResponse(
+            status_code=HTTPStatus.UNAUTHORIZED,
+            content={"detail": "Authorization header missing"}
+        )
+    
+    check_data = check_auth(authorization)
+    if isinstance(check_data, JSONResponse):
+        return check_data
+
+    code_text = get_student_labs_code(task_id, student_id, solution_id)
+    if not code_text:
+            return JSONResponse(
+                status_code=HTTPStatus.NOT_FOUND,
+                content={"detail": "Solution not found"}
+            )
+    
+        # 3. Отдаем как файл для скачивания
+    filename = f"lab_{task_id}_student_{student_id}.py"
+        
     return Response(
         content=code_text,
         media_type="text/x-python",

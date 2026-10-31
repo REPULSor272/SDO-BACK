@@ -40,3 +40,5 @@ async def user_data(authorization: str = Header(...)) -> JSONResponse:
         status_code=HTTPStatus.OK,
         content=user_data.model_dump()
     )
+
+

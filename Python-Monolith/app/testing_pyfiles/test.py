@@ -399,6 +399,12 @@ async def check_file(
     max_variables: int | None = None,
 ) -> TestCase:
 
+    variables_used = (
+        _count_python_variables(student_code)
+        if subject_id == SubjectTypes.Python.value
+        else None
+    )
+
     limits = {
         "max_code_length": max_code_length,
         "max_execution_time_sec": max_execution_time_sec,
@@ -417,6 +423,7 @@ async def check_file(
             raise ValueError("Unsupported subject")
 
     if test_result.get("status") == "Failed":
+        mark = 0
         fail_reason = test_result.get("fail_reason")
         code_output = (
             fail_reason
@@ -430,9 +437,11 @@ async def check_file(
             user_output=test_result.get("user_output", ""),
             execution_time=0.0,
             code_length=test_result.get("code_length", 0),
-            execution_status="Failed"
+            execution_status="Failed",
+            variables_used=variables_used
         )
     else:
+        mark = 100
         result = TestCase(
             code_output="All tests passed successfully.",
             input_data="",
@@ -440,16 +449,19 @@ async def check_file(
             user_output="",
             execution_time=test_result["total_execution_time"],
             code_length=test_result.get("code_length", 0),
-            execution_status=test_result["status"]
+            execution_status=test_result["status"],
+            variables_used=variables_used
         )
 
     update_solution_test_result(
         solution_id,
+        mark,
         result.execution_status,
         result.model_dump(mode="json"),
         code_length=result.code_length,
         execution_time=result.execution_time,
         memory_used_mb=result.memory_used_mb,
+        variables_used= variables_used
     )
 
     return result

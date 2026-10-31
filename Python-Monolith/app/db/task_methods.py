@@ -155,11 +155,13 @@ def add_solution(code, user_id, task_id) -> str | bool:
 
 def update_solution_test_result(
     solution_id,
+    mark,
     status,
     test_result,
     code_length: int | None = None,
     execution_time: float | None = None,
     memory_used_mb: float | None = None,
+    variables_used: int | None = None
 ):
     with Session() as session:
         solution = session.query(Solution).filter_by(id=solution_id).first()
@@ -167,6 +169,7 @@ def update_solution_test_result(
         if solution is None:
             raise ValueError(f"Solution {solution_id} not found")
 
+        solution.mark = mark
         solution.status = status
         solution.test_result = test_result
         if code_length is not None:
@@ -175,6 +178,8 @@ def update_solution_test_result(
             solution.executionTime = execution_time
         if memory_used_mb is not None:
             solution.memoryUsedMb = memory_used_mb
+        if variables_used is not None:
+            solution.usedVariables = variables_used
 
         session.commit()
 

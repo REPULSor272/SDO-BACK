@@ -194,7 +194,7 @@ def get_student_labs(student_id: int, lab_id: int) -> TaskInfo | str:
         return response
 
 
-def get_student_labs_file(student_id: int, task_id: int) -> str | None:
+def get_student_labs_last_file(student_id: int, task_id: int) -> str | None:
     with Session() as session:
         latest_solution = (
             session.query(Solution)
@@ -211,6 +211,21 @@ def get_student_labs_file(student_id: int, task_id: int) -> str | None:
             return None
 
         return latest_solution.code
+
+def get_student_labs_code(task_id:int, student_id:int, solution_id:int):
+    with Session() as session:
+        code_solution = (
+            session.query(Solution)
+            .filter(Solution.id == solution_id,
+                    Solution.Task_id == task_id,
+                    Solution.User_id == student_id)
+            .first()
+            )
+
+        if not code_solution:
+            return None
+
+        return code_solution.code
 
 
 def get_users_by_faculty(faculty_id: int) -> Union[list[UserInfo], str]:

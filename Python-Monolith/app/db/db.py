@@ -107,6 +107,7 @@ class Solution(Base):
     codeLength = Column(Integer, nullable=True)
     executionTime = Column(Float, nullable=True)
     memoryUsedMb = Column(Float, nullable=True)
+    usedVariables = Column(Integer, nullable=True)
     User_id = Column(Integer, ForeignKey('User.id', ondelete='CASCADE'), nullable=False)
     Task_id = Column(Integer, ForeignKey('Task.id', ondelete='CASCADE'), nullable=True)
     user = relationship('User', back_populates='solutions')
