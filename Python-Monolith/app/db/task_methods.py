@@ -320,3 +320,12 @@ def delete_solution(solution_id: int) -> bool:
         session.delete(solution)
         session.commit()
         return True
+
+def get_first_test_case(task_id):
+    with Session() as session:
+        test_case = session.query(TestCase).filter(TestCase.Task_id == task_id).first()
+
+    return {"id": test_case.id,
+            "inp": test_case.inp,
+            "out": test_case.out
+             }

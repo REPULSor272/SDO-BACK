@@ -13,6 +13,7 @@ class TaskInfo(BaseModel):
     id: int = 0
     name: str = ""
     description: str = ""
+    first_test_case: dict
     count_subtasks: int = 0
     status: str = ""
     attempts_user: dict

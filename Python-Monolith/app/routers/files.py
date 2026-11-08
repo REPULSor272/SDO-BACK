@@ -9,7 +9,7 @@ from http import HTTPStatus
 from app.core.check_auth import check_auth
 from app.core.files.files import check_type, decode_python_source
 from app.db.subject_methods import get_subject_id_by_task
-from app.db.task_methods import add_solution, delete_solution_bd, get_latest_solution, get_task_data, get_user_solutions_by_task, update_solution_hidden
+from app.db.task_methods import add_solution, delete_solution_bd, get_first_test_case, get_latest_solution, get_task_data, get_user_solutions_by_task, update_solution_hidden
 from app.db.user_methods import is_user_enrolled_in_subject
 from app.schemas.files import ResponseUpload
 from app.schemas.others import Error
@@ -169,6 +169,7 @@ async def get_task_info(task_id: int, authorization: str = Header(...)):
             status_code=HTTPStatus.NOT_FOUND,
             content={"error": "Task not found."}
         )
+    task_test_case = get_first_test_case(task_id)
 
     # Получение решений пользователя для задачи
     user_solutions = get_user_solutions_by_task(check_data['user_id'], task_id)
@@ -198,6 +199,7 @@ async def get_task_info(task_id: int, authorization: str = Header(...)):
             id=task_data['id'],
             name=task_data['name'],
             description=task_data['description'],
+            first_test_case = task_test_case,
             count_subtasks=1,
             status=status,
             attempts_user = attempts_info,
