@@ -4,12 +4,12 @@ from http import HTTPStatus
 
 from app.core.check_auth import check_auth
 
-from app.db.student_methods import get_student_tasks_with_status
 from app.db.task_methods import get_tasks_by_subject, get_user_solutions_by_task
 from app.db.user_methods import get_user_subjects, is_user_enrolled_in_subject
 from app.schemas.others import Error
-from app.schemas.subject import SubjectInfo
 from app.schemas.task import Task
+from app.db.student_methods import get_student_tasks_with_status, get_student_stats
+from app.schemas.subject import SubjectInfo, StudentStats
 
 router = APIRouter()
 
@@ -85,4 +85,17 @@ async def get_user_labs(authorization: str = Header(...)) -> JSONResponse:
     return JSONResponse(
         status_code=HTTPStatus.OK,
         content=serialized_labs
+    )
+
+@router.get("/student/stats", response_model=StudentStats, summary="Статистика успеваемости студента")
+async def get_student_statistics(authorization: str = Header(...)) -> JSONResponse:
+    check_data = check_auth(authorization)
+    if isinstance(check_data, JSONResponse):
+        return check_data
+
+    stats = get_student_stats(check_data['user_id'])
+
+    return JSONResponse(
+        status_code=HTTPStatus.OK,
+        content=stats.model_dump()
     )
